@@ -1,0 +1,145 @@
+Attribute VB_Name = "Module1"
+Sub stock_analysis()
+' --------------------------------------------
+' LOOP THROUGH ALL SHEETS
+' --------------------------------------------
+  
+'Declare Variables
+
+    Dim ws As Worksheet
+    Dim i As Long
+    Dim Start As Integer
+
+    Dim RowCount As Long
+    Dim Ticker_Row As Integer
+    Dim Ticker_Name As String
+
+    Dim Start_Open As Double
+    Dim End_Close As Double
+    Dim Yearly_Change As Double
+    Dim Percent_Change As Double
+    Dim Total_StockVol As Double
+   
+    Dim MaxPrcntInc As Double
+    Dim MinPrcntDec As Double
+    Dim MaxTotVol As Double
+
+    Dim Tckr_MaxPrcnt As String
+    Dim Tckr_MinPrcnt As String
+    Dim Tckr_MaxTotVol As String
+    
+
+For Each ws In Worksheets
+    
+'Initialize
+     Start = 2
+     Total_StockVol = 0
+               
+'Column headers
+     ws.Range("I1").Value = "Ticker"
+     ws.Range("J1").Value = "Yearly Change"
+     ws.Range("K1").Value = "Percent Change"
+     ws.Range("L1").Value = "Total Stock Volume"
+
+     ws.Range("P1").Value = "Ticker"
+     ws.Range("Q1").Value = "Value"
+
+'Row headers
+     ws.Range("O2").Value = "Greatest % Increase"
+     ws.Range("O3").Value = "Greatest % Decrease"
+     ws.Range("O4").Value = "Greatest Total Volume"
+
+'Determine the last non-empty row of the sheet
+    RowCount = ws.Cells(Rows.Count, "A").End(xlUp).Row
+
+'Initialize location of first ticker of the sheet
+    Ticker_Row = 2
+
+'Determine open value for a given ticker
+   Start_Open = ws.Cells(Ticker_Row, 3).Value
+
+'Go through the whole data set starting at row 2 until the last row
+    For i = Start To RowCount
+             
+    'Check to see if we are still within the same ticker
+          If ws.Cells(i + 1, 1).Value <> ws.Cells(i, 1).Value Then
+       
+     'Set ticker name
+            Ticker_Name = ws.Cells(i, 1).Value
+       
+     'Set stock closing value
+            End_Close = ws.Cells(i, 6).Value
+       
+     'Calculate yearly change and percent change
+            Yearly_Change = End_Close - Start_Open
+        
+     'Ensure that you are never dividing by 0
+               If Start_Open = 0 Then
+                  Percent_Change = 0
+                  Else
+                  Percent_Change = (Yearly_Change / Start_Open)
+               End If
+         
+     'Add to the total stock volume
+           Total_StockVol = Total_StockVol + ws.Cells(i, 7).Value
+       
+     'Output ticker name
+           ws.Range("I" & Ticker_Row).Value = Ticker_Name
+        
+     'Output yearly change with conditional formatting: green-fill for an increase, red-fill for a decrease
+           ws.Range("J" & Ticker_Row).Value = Yearly_Change
+                If Yearly_Change >= 0 Then
+                   ws.Range("J" & Ticker_Row).Interior.ColorIndex = 4
+                   Else
+                   ws.Range("J" & Ticker_Row).Interior.ColorIndex = 3
+                 End If
+           
+     'Output percent change, and total stock volume
+           ws.Range("K" & Ticker_Row).Value = Format(Percent_Change, "00.00%")
+           ws.Range("L" & Ticker_Row).Value = Total_StockVol
+       
+            
+     'Reset the ticker row and the total stock volume for the new ticker
+           Ticker_Row = Ticker_Row + 1
+           Total_StockVol = 0
+       
+     'Reset openning value for that of the new ticker
+           Start_Open = ws.Cells(i + 1, 3).Value
+
+     'If we are still within the same ticker
+       Else
+       
+    'Add to the running total stock volume
+       Total_StockVol = Total_StockVol + ws.Cells(i, 7).Value
+       End If
+       
+     Next i
+
+    'Determine sheet summary values
+      Set MinMax_Chk = ws.Range("K2:K" & Rows.Count)
+      Set MaxTotVol_Chk = ws.Range("L2:L" & Rows.Count)
+      Set Tckr_Nm_Chk = ws.Range("A2:A" & Rows.Count)
+    
+      MaxPrcntInc = Application.WorksheetFunction.Max(MinMax_Chk)
+      MinPrcntDec = Application.WorksheetFunction.Min(MinMax_Chk)
+      MaxTotVol = Application.WorksheetFunction.Max(MaxTotVol_Chk)
+        
+      ws.Range("Q2").Value = MaxPrcntInc
+      ws.Range("Q3").Value = MinPrcntDec
+      ws.Range("Q4").Value = MaxTotVol
+    
+      Tckr_MaxPrcnt = Application.WorksheetFunction.Match(ws.Range("Q2"), ws.Range("K:K"), 0)
+      ws.Range("P2").Value = ws.Cells(Tckr_MaxPrcnt, 1).Value
+    
+      Tckr_MinPrcnt = Application.WorksheetFunction.Match(ws.Range("Q3"), ws.Range("K:K"), 0)
+      ws.Range("P3").Value = ws.Cells(Tckr_MinPrcnt, 1).Value
+    
+      Tckr_MaxTotVol = Application.WorksheetFunction.Match(ws.Range("Q4"), ws.Range("L:L"), 0)
+      ws.Range("P4").Value = ws.Cells(Tckr_MaxTotVol, 1).Value
+    
+  Next ws
+ 
+ End Sub
+     
+
+
